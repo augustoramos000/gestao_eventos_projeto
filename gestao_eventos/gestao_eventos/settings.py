@@ -1,3 +1,6 @@
+import os
+
+
 """
 Django settings for gestao_eventos project.
 
@@ -12,12 +15,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-^(-)67l!yuywu#r4c(-1h-l12mmd^hyft0%(-4h30v687lq8mt'
@@ -115,7 +116,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # CORREÇÃO: Use o objeto Path do Django para construir o caminho.
 STATICFILES_DIRS = [
@@ -125,3 +129,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = '/'  # Redireciona para a home ('index') após o login
+LOGOUT_REDIRECT_URL = '/' # Redireciona para a home após o logout
+LOGIN_URL = 'login'       # Nome da URL para a página de login

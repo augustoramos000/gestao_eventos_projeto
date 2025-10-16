@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestão de Eventos{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}"> 
+</head>
+<body>
+    <div class="window panel no-select">
+        <div class="window-controls">
+            <span class="dot close"></span>
+            <span class="dot minimize"></span>
+            <span class="dot maximize"></span>
+        </div>
+        
+        <div class="window-content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+</body>
+</html>

@@ -5,26 +5,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Eventos (macOS Style)</title>
-    
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-
     <div class="window panel no-select">
-        
         <div class="window-controls">
             <span class="dot close"></span>
             <span class="dot minimize"></span>
             <span class="dot maximize"></span>
         </div>
-
         <div class="window-content">
-            <h1>Gestão de Eventos</h1>
-            <p>Seu app com visual nativo Apple.</p>
-            <button class="button">Novo Evento</button>
-            <button class="button secondary">Configurações</button>
+            <h1>Sistema de Gestão de Eventos Acadêmicos</h1>
+            
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li class="{{ message.tags }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+                <p>Logado como: **{{ user.username }}** ({{ user.perfilusuario.perfil }})</p>
+                
+                {% if user.perfilusuario.perfil == 'ORGANIZADOR' %}
+                    <button class="button" onclick="location.href='{% url 'criar_evento' %}'">Novo Evento</button>
+                {% endif %}
+                
+                <button class="button secondary" onclick="alert('Configurações a ser implementada')">Configurações</button>
+                <button class="button" onclick="location.href='{% url 'logout' %}'">Sair</button>
+            {% else %}
+                <button class="button" onclick="location.href='{% url 'login' %}'">Login</button>
+                <button class="button secondary" onclick="location.href='{% url 'cadastro' %}'">Cadastre-se</button>
+            {% endif %}
+
+            <h2>Eventos Disponíveis</h2>
+            {% if eventos %}
+                <ul>
+                {% for evento in eventos %}
+                    <li>
+                        <h3>{{ evento.titulo }} ({{ evento.get_tipo_display }})</h3>
+                        <p>Local: {{ evento.local }} | Data: {{ evento.data_inicio|date:"d/m/Y H:i" }}</p>
+                        <p>Organizador: {{ evento.organizador.user.first_name|default:evento.organizador.user.username }}</p>
+                        <p>Vagas: **{{ evento.vagas_restantes }}** de {{ evento.quantidade_participantes }}</p>
+                        
+                        {% if user.is_authenticated and user.perfilusuario.perfil in 'ALUNO,PROFESSOR' %}
+                            {% if user in evento.participantes.all %}
+                                <p>✅ Você já está inscrito!</p>
+                            {% elif evento.vagas_restantes > 0 %}
+                                <a href="{% url 'inscricao_evento' evento.id %}" class="button small">Inscrever-se</a>
+                            {% else %}
+                                <p>❌ Vagas esgotadas.</p>
+                            {% endif %}
+                        {% elif user.is_authenticated and user.perfilusuario.perfil == 'ORGANIZADOR' %}
+                            {% if evento.participantes.all %}
+                                <a href="{% url 'emitir_certificado' evento.id user.id %}" class="button small">Emitir Certificado (Teste)</a>
+                            {% else %}
+                                <p>Aguardando participantes...</p>
+                            {% endif %}
+                        {% endif %}
+                    </li>
+                    <hr>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>Nenhum evento disponível no momento.</p>
+            {% endif %}
+            
         </div>
     </div>
-
 </body>
 </html>
