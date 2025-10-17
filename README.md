@@ -78,3 +78,15 @@ Aqui estão as principais tecnologias e ferramentas usadas no projeto:
    ```bash
    git clone https://github.com/augustoramos000/gestao_eventos_projeto.git
    cd gestao_eventos_projeto
+
+## Executando a aplicação:
+python manage.py runserver 
+Crie um superusuário para aceder à [área de administração:](http://127.0.0.1:8000/admin/)
+
+ ```bash
+python manage.py createsuperuser
+ ```
+Criamos no banco:
+Usuário: paulo.sn
+Senha: vasco123
+
