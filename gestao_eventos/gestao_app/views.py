@@ -26,6 +26,10 @@ def cadastro_usuario(request):
             messages.success(request, 'Cadastro realizado com sucesso!')
             return redirect('listar_eventos')
         else:
+            # ADICIONE ESTAS LINHAS PARA DEPURAÇÃO
+            print("--- ERROS DE VALIDAÇÃO DO FORMULÁRIO DE CADASTRO ---")
+            print(form.errors.as_json())
+            # FIM DAS LINHAS DE DEPURAÇÃO
             messages.error(request, 'Ocorreram erros no formulário. Por favor, corrija-os.')
     else:
         form = UserCreationForm()
