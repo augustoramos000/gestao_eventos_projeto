@@ -41,8 +41,7 @@ Ele pode servir como base para um sistema real de gestão de conferências, pale
 - CRUD completo para eventos  
 - CRUD para participantes  
 - Associação de participantes a eventos  
-- Registro de presença  
-- Geração de relatórios / exportação de dados  
+- Registro de inscrição 
 - Interface web com páginas responsivas  
 - Validações de dados (datas, campos obrigatórios etc.)  
 
@@ -59,7 +58,7 @@ Aqui estão as principais tecnologias e ferramentas usadas no projeto:
 | Banco de Dados |SQLite|
 | Front-end / Templates | HTML, CSS, JavaScript |
 | Ambiente Virtual | venv |
-| Outros | bibliotecas auxiliares, ORM, etc. (especifique) |
+| Outros | biblioteca ReportLab |
 
 ---
 
@@ -69,7 +68,8 @@ Aqui estão as principais tecnologias e ferramentas usadas no projeto:
 
 - Python 3.x instalado  
 - (Opcional) PostgreSQL / MySQL ou outro banco de dados, se você não usar SQLite  
-- Git  
+- Git
+- Biblioteca ReportLab instalada (pip install ReportLab) 
 
 ### Setup do ambiente
 
