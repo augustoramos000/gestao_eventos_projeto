@@ -1,3 +1,8 @@
+## Participantes:
+                Paulo Sérgio Reis Neto Ra:22409324
+                Augusto Ramos Ra:22401009
+                Rodrigo Passos Ra:22405821
+
 # Gestão de Eventos
 
 Uma aplicação web para gerenciar eventos — incluindo cadastro de eventos, participantes, controle de presenças, relatórios e outras funcionalidades típicas de uma plataforma de gestão de eventos.
