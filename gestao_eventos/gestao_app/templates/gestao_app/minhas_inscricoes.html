@@ -10,21 +10,30 @@
         <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <ul class="divide-y divide-gray-200">
                 {% for inscricao in inscricoes %}
-                    <li class="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors duration-200">
+                    <li class="p-6 flex items-center justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-blue-600">{{ inscricao.evento.nome }}</h3>
                             <p class="text-sm text-gray-600">
                                 <span class="font-medium">Data do Evento:</span> {{ inscricao.evento.data_inicio|date:"d/m/Y" }}
+                                {% if inscricao.evento.data_fim != inscricao.evento.data_inicio %}
+                                    até {{ inscricao.evento.data_fim|date:"d/m/Y" }}
+                                {% endif %}
                             </p>
                             <p class="text-sm text-gray-500">
                                 <span class="font-medium">Inscrito em:</span> {{ inscricao.data_inscricao|date:"d/m/Y" }}
                             </p>
                         </div>
                         <div>
-                            <!-- CORREÇÃO: Adiciona o botão para ver o certificado -->
-                            <a href="{% url 'detalhe_certificado' inscricao.id %}" class="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300">
-                                Ver Certificado
-                            </a>
+                            <!-- CORREÇÃO: Lógica para mostrar o botão apenas após o evento -->
+                            {% if inscricao.evento.data_fim < hoje %}
+                                <a href="{% url 'detalhe_certificado' inscricao.id %}" class="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300">
+                                    Ver Certificado
+                                </a>
+                            {% else %}
+                                <span class="px-4 py-2 bg-gray-300 text-gray-600 text-sm font-medium rounded-md cursor-not-allowed">
+                                    Disponível após o evento
+                                </span>
+                            {% endif %}
                         </div>
                     </li>
                 {% endfor %}

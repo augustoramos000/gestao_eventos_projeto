@@ -2,17 +2,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-# Novas importações para a geração de PDF
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 import io
+# Nova importação para lidar com datas
+from django.utils import timezone
 
 from .models import Evento, Inscricao, Usuario
 from .forms import UserCreationForm, LoginForm, EventoForm
 
-# --- Views existentes (sem alteração) ---
+# --- Views existentes ---
+
 def listar_eventos(request):
     eventos = Evento.objects.all().order_by('data_inicio')
     eventos_inscritos_ids = []
@@ -58,8 +60,17 @@ def logout_usuario(request):
 
 @login_required
 def minhas_inscricoes(request):
+    """
+    View para o usuário ver os eventos em que está inscrito.
+    Agora também passa a data atual para o template.
+    """
     inscricoes = Inscricao.objects.filter(usuario=request.user).select_related('evento')
-    return render(request, 'gestao_app/minhas_inscricoes.html', {'inscricoes': inscricoes})
+    # CORREÇÃO: Adiciona a data atual ao contexto
+    contexto = {
+        'inscricoes': inscricoes,
+        'hoje': timezone.now().date()
+    }
+    return render(request, 'gestao_app/minhas_inscricoes.html', contexto)
 
 @login_required
 def inscrever_evento(request, evento_id):
@@ -85,66 +96,47 @@ def criar_evento(request):
         form = EventoForm()
     return render(request, 'gestao_app/criar_evento.html', {'form': form})
 
-# --- NOVAS VIEWS PARA CERTIFICADOS ---
-
 @login_required
 def detalhe_certificado(request, inscricao_id):
-    """
-    Mostra uma página com os detalhes do certificado e um botão para download.
-    """
     inscricao = get_object_or_404(Inscricao, id=inscricao_id, usuario=request.user)
+    # Adicional: Garante que o usuário só possa ver o certificado se o evento já acabou
+    if inscricao.evento.data_fim >= timezone.now().date():
+        messages.error(request, 'O certificado só estará disponível após a data de término do evento.')
+        return redirect('minhas_inscricoes')
     return render(request, 'gestao_app/detalhe_certificado.html', {'inscricao': inscricao})
 
 @login_required
 def gerar_pdf_certificado(request, inscricao_id):
-    """
-    Gera o ficheiro PDF do certificado e o entrega para download.
-    """
     inscricao = get_object_or_404(Inscricao, id=inscricao_id, usuario=request.user)
+    # Adicional: Garante que o PDF só seja gerado se o evento já acabou
+    if inscricao.evento.data_fim >= timezone.now().date():
+        messages.error(request, 'O certificado só estará disponível para download após o término do evento.')
+        return redirect('minhas_inscricoes')
 
-    # Cria um buffer de memória para o PDF
     buffer = io.BytesIO()
-
-    # Cria o objeto PDF, usando o buffer como o seu "ficheiro"
     p = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
-
-    # --- Desenha o conteúdo do PDF ---
     p.setTitle(f"Certificado - {inscricao.evento.nome}")
-
-    # Título do Certificado
     p.setFont("Helvetica-Bold", 24)
     p.drawCentredString(width / 2.0, height - 2 * inch, "Certificado de Participação")
-
-    # Texto principal
     p.setFont("Helvetica", 12)
     texto = p.beginText(1.5 * inch, height - 3.5 * inch)
     texto.setFont("Helvetica", 12)
     texto.textLine("Certificamos que")
-    texto.moveCursor(0, 0.5*inch) # Espaçamento
+    texto.moveCursor(0, 0.5*inch)
     texto.setFont("Helvetica-Bold", 14)
     texto.textLine(f"{inscricao.usuario.get_full_name()}")
-    texto.moveCursor(0, 0.5*inch) # Espaçamento
+    texto.moveCursor(0, 0.5*inch)
     texto.setFont("Helvetica", 12)
     texto.textLine(f"participou no evento \"{inscricao.evento.nome}\",")
     texto.textLine(f"realizado em {inscricao.evento.data_inicio.strftime('%d/%m/%Y')},")
     texto.textLine(f"organizado por {inscricao.evento.organizador_responsavel.get_full_name()}.")
     p.drawText(texto)
-
-    # Assinatura (exemplo)
     p.line(3 * inch, 2.5 * inch, 5.5 * inch, 2.5 * inch)
     p.drawCentredString(4.25 * inch, 2.25 * inch, "Assinatura do Organizador")
-
-    # --- Finaliza o PDF ---
     p.showPage()
     p.save()
-
-    # Retorna o buffer para o início
     buffer.seek(0)
-    
-    # Cria a resposta HTTP com o tipo de conteúdo correto para PDF
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="certificado_{inscricao.evento.nome}.pdf"'
-    
     return response
-
