@@ -1,0 +1,46 @@
+{% extends 'gestao_app/base.html' %}
+
+{% block title %}Meus Eventos - SGEA{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 p-8">
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">Meus Eventos</h2>
+        <a href="{% url 'criar_evento' %}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            Criar Novo Evento
+        </a>
+    </div>
+
+    {% if eventos %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <ul class="divide-y divide-gray-200">
+                {% for evento in eventos %}
+                    <li class="p-6 flex items-center justify-between hover:bg-gray-50">
+                        <div>
+                            <h3 class="text-lg font-semibold text-blue-600">{{ evento.nome }}</h3>
+                            <p class="text-sm text-gray-600">
+                                {{ evento.data_inicio|date:"d/m/Y" }} a {{ evento.data_fim|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <div>
+                            {% if evento.finalizado %}
+                                <a href="{% url 'gerenciar_evento' evento.id %}" class="px-4 py-2 bg-indigo-500 text-white text-sm font-medium rounded-md hover:bg-indigo-600">
+                                    Gerir Certificados
+                                </a>
+                            {% else %}
+                                <span class="px-4 py-2 bg-gray-300 text-gray-600 text-sm font-medium rounded-md cursor-not-allowed">
+                                    Em andamento
+                                </span>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+            <p class="text-gray-600">Você ainda não criou nenhum evento.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

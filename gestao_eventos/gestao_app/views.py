@@ -7,14 +7,13 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 import io
-# Nova importação para lidar com datas
 from django.utils import timezone
+from datetime import datetime
 
 from .models import Evento, Inscricao, Usuario
 from .forms import UserCreationForm, LoginForm, EventoForm
 
-# --- Views existentes ---
-
+# --- Views existentes (sem alterações) ---
 def listar_eventos(request):
     eventos = Evento.objects.all().order_by('data_inicio')
     eventos_inscritos_ids = []
@@ -59,20 +58,6 @@ def logout_usuario(request):
     return redirect('listar_eventos')
 
 @login_required
-def minhas_inscricoes(request):
-    """
-    View para o usuário ver os eventos em que está inscrito.
-    Agora também passa a data atual para o template.
-    """
-    inscricoes = Inscricao.objects.filter(usuario=request.user).select_related('evento')
-    # CORREÇÃO: Adiciona a data atual ao contexto
-    contexto = {
-        'inscricoes': inscricoes,
-        'hoje': timezone.now().date()
-    }
-    return render(request, 'gestao_app/minhas_inscricoes.html', contexto)
-
-@login_required
 def inscrever_evento(request, evento_id):
     evento = get_object_or_404(Evento, id=evento_id)
     Inscricao.objects.get_or_create(usuario=request.user, evento=evento)
@@ -96,23 +81,39 @@ def criar_evento(request):
         form = EventoForm()
     return render(request, 'gestao_app/criar_evento.html', {'form': form})
 
+# --- Views de Certificado (Atualizadas) ---
+
+def is_evento_finalizado(evento):
+    """Função auxiliar para verificar se um evento já terminou (apenas data)."""
+    return evento.data_fim < timezone.now().date()
+
+@login_required
+def minhas_inscricoes(request):
+    inscricoes = Inscricao.objects.filter(usuario=request.user).select_related('evento')
+    # Adiciona a verificação se o evento já terminou para cada inscrição
+    for inscricao in inscricoes:
+        inscricao.evento_finalizado = is_evento_finalizado(inscricao.evento)
+    contexto = { 'inscricoes': inscricoes }
+    return render(request, 'gestao_app/minhas_inscricoes.html', contexto)
+
 @login_required
 def detalhe_certificado(request, inscricao_id):
     inscricao = get_object_or_404(Inscricao, id=inscricao_id, usuario=request.user)
-    # Adicional: Garante que o usuário só possa ver o certificado se o evento já acabou
-    if inscricao.evento.data_fim >= timezone.now().date():
-        messages.error(request, 'O certificado só estará disponível após a data de término do evento.')
+    # Verifica se o certificado foi liberado pelo organizador
+    if not inscricao.certificado_liberado:
+        messages.error(request, 'O certificado para este evento ainda não foi liberado pelo organizador.')
         return redirect('minhas_inscricoes')
     return render(request, 'gestao_app/detalhe_certificado.html', {'inscricao': inscricao})
 
 @login_required
 def gerar_pdf_certificado(request, inscricao_id):
     inscricao = get_object_or_404(Inscricao, id=inscricao_id, usuario=request.user)
-    # Adicional: Garante que o PDF só seja gerado se o evento já acabou
-    if inscricao.evento.data_fim >= timezone.now().date():
-        messages.error(request, 'O certificado só estará disponível para download após o término do evento.')
+    # Verifica se o certificado foi liberado
+    if not inscricao.certificado_liberado:
+        messages.error(request, 'O certificado não está disponível para download.')
         return redirect('minhas_inscricoes')
-
+    
+    # Lógica de geração do PDF (sem alterações)
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
@@ -140,3 +141,41 @@ def gerar_pdf_certificado(request, inscricao_id):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="certificado_{inscricao.evento.nome}.pdf"'
     return response
+
+# --- Novas Views para o Organizador ---
+
+@login_required
+def meus_eventos(request):
+    """Página que lista os eventos criados pelo organizador logado."""
+    if request.user.perfil != 'ORGANIZADOR':
+        messages.error(request, 'Apenas organizadores podem aceder a esta página.')
+        return redirect('listar_eventos')
+    
+    eventos = Evento.objects.filter(organizador_responsavel=request.user).order_by('-data_inicio')
+    for evento in eventos:
+        evento.finalizado = is_evento_finalizado(evento)
+    
+    return render(request, 'gestao_app/meus_eventos.html', {'eventos': eventos})
+
+@login_required
+def gerenciar_evento(request, evento_id):
+    """Página para o organizador gerir um evento específico e liberar certificados."""
+    evento = get_object_or_404(Evento, id=evento_id, organizador_responsavel=request.user)
+    
+    if not is_evento_finalizado(evento):
+        messages.error(request, 'Você só pode gerir certificados de eventos que já ocorreram.')
+        return redirect('meus_eventos')
+
+    if request.method == 'POST':
+        # Pega a lista de IDs de inscrição dos checkboxes selecionados
+        inscricoes_a_liberar_ids = request.POST.getlist('inscricao_id')
+        
+        # Atualiza o campo 'certificado_liberado' para True para todas as inscrições selecionadas
+        Inscricao.objects.filter(id__in=inscricoes_a_liberar_ids, evento=evento).update(certificado_liberado=True)
+        
+        messages.success(request, 'Certificados liberados com sucesso!')
+        return redirect('gerenciar_evento', evento_id=evento.id)
+
+    inscricoes = Inscricao.objects.filter(evento=evento).select_related('usuario')
+    return render(request, 'gestao_app/gerenciar_evento.html', {'evento': evento, 'inscricoes': inscricoes})
+

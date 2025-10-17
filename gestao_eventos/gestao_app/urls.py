@@ -12,9 +12,13 @@ urlpatterns = [
     path('minhas-inscricoes/', views.minhas_inscricoes, name='minhas_inscricoes'),
     path('evento/<int:evento_id>/inscrever/', views.inscrever_evento, name='inscrever_evento'),
     path('evento/criar/', views.criar_evento, name='criar_evento'),
-
-    # CORREÇÃO: URLs para certificados atualizadas para corresponder às views existentes
+    
+    # URLs para certificados
     path('certificado/<int:inscricao_id>/', views.detalhe_certificado, name='detalhe_certificado'),
     path('certificado/<int:inscricao_id>/gerar-pdf/', views.gerar_pdf_certificado, name='gerar_pdf_certificado'),
+
+    # URLs para gestão do organizador
+    path('meus-eventos/', views.meus_eventos, name='meus_eventos'),
+    path('evento/<int:evento_id>/gerenciar/', views.gerenciar_evento, name='gerenciar_evento'),
 ]
 

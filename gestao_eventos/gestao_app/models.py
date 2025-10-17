@@ -14,25 +14,19 @@ class Usuario(AbstractUser):
         ('ORGANIZADOR', 'Organizador'),
     )
     telefone = models.CharField(max_length=15, blank=True, null=True, help_text="Telefone para contato")
-    instituicao_ensino = models.CharField(max_length=100, help_text="Instituição de ensino do usuário")
+    instituicao_ensino = models.CharField(max_length=100, blank=True, null=True, help_text="Instituição de ensino do usuário (obrigatório para Alunos e Professores)")
     perfil = models.CharField(max_length=20, choices=PERFIL_CHOICES, default='ALUNO')
 
-    # FIX: Adicionando related_name para resolver o conflito com o auth.User padrão do Django.
+    # Mantém os related_name para resolver o conflito com o auth.User padrão do Django.
     groups = models.ManyToManyField(
         'auth.Group',
-        verbose_name='groups',
+        related_name='usuario_set',
         blank=True,
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-        related_name="usuario_set",  # Nome único para o acessor reverso
-        related_query_name="user",
     )
     user_permissions = models.ManyToManyField(
         'auth.Permission',
-        verbose_name='user permissions',
+        related_name='usuario_set',
         blank=True,
-        help_text='Specific permissions for this user.',
-        related_name="usuario_set_permissions",  # Nome único para o acessor reverso
-        related_query_name="user",
     )
 
     def __str__(self):
@@ -52,9 +46,10 @@ class Evento(models.Model):
     tipo_evento = models.CharField(max_length=20, choices=TIPO_CHOICES)
     data_inicio = models.DateField()
     data_fim = models.DateField()
-    horario = models.TimeField()
+    horario = models.TimeField(help_text="Horário de término do evento no último dia.")
     local = models.CharField(max_length=150)
     quantidade_participantes = models.PositiveIntegerField()
+    # Revertido para usar PROTECT, que é mais seguro para não apagar eventos se o organizador for removido.
     organizador_responsavel = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -71,6 +66,8 @@ class Inscricao(models.Model):
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
     data_inscricao = models.DateTimeField(auto_now_add=True)
+    # Campo essencial para a nova funcionalidade de liberação manual.
+    certificado_liberado = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('usuario', 'evento')
@@ -83,8 +80,11 @@ class Certificado(models.Model):
     Modelo para gerar e armazenar os certificados dos participantes.
     """
     inscricao = models.OneToOneField(Inscricao, on_delete=models.CASCADE)
+    # Revertido para usar UUIDField, que é uma ótima escolha para códigos de validação.
     codigo_validacao = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     data_emissao = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'Certificado para {self.inscricao.usuario} no evento {self.inscricao.evento}'
+
+
