@@ -1,0 +1,29 @@
+{% extends 'gestao_app/base.html' %}
+
+{% block title %}Seu Certificado - {{ inscricao.evento.nome }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-xl">
+    <div class="border-b pb-4 mb-6">
+        <h2 class="text-3xl font-bold text-center text-gray-800">Certificado de Participação</h2>
+    </div>
+
+    <div class="text-center text-gray-700 space-y-4">
+        <p class="text-lg">Certificamos que</p>
+        <p class="text-2xl font-bold text-blue-600">{{ inscricao.usuario.get_full_name }}</p>
+        <p class="text-lg">participou com sucesso do evento</p>
+        <p class="text-2xl font-semibold text-gray-800">"{{ inscricao.evento.nome }}"</p>
+        <p class="text-md text-gray-600">
+            realizado em {{ inscricao.evento.data_inicio|date:"d/m/Y" }} no local {{ inscricao.evento.local }}.
+        </p>
+    </div>
+
+    <div class="mt-10 flex justify-center">
+        <!-- BOTÃO PARA FAZER O DOWNLOAD DO PDF -->
+        <a href="{% url 'gerar_pdf_certificado' inscricao.id %}" target="_blank" class="w-full md:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Download do Certificado (PDF)
+        </a>
+    </div>
+</div>
+{% endblock %}
