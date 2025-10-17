@@ -88,7 +88,13 @@ python manage.py runserver
  ```bash
 python manage.py createsuperuser
  ```
+
 - Criamos no banco:
 - Usuário: paulo.sn
 - Senha: vasco123
 
+
+##Documentos(Caso de uso e tabela sqlite)
+[Sistema de Gestão de Eventos Acadêmicos (SGEA) - Requisitos e Casos de Uso..pdf](https://github.com/user-attachments/files/22970619/Sistema.de.Gestao.de.Eventos.Academicos.SGEA.-.Requisitos.e.Casos.de.Uso.pdf)
+
+[tabela sqlite.pdf](https://github.com/user-attachments/files/22970617/tabela.sqlite.pdf)
