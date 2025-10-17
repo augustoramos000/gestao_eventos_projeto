@@ -80,13 +80,15 @@ Aqui estão as principais tecnologias e ferramentas usadas no projeto:
    cd gestao_eventos_projeto
 
 ## Executando a aplicação:
+```bash
 python manage.py runserver 
-Crie um superusuário para aceder à [área de administração:](http://127.0.0.1:8000/admin/)
+```
+- Crie um superusuário para aceder à [área de administração:](http://127.0.0.1:8000/admin/)
 
  ```bash
 python manage.py createsuperuser
  ```
-Criamos no banco:
-Usuário: paulo.sn
-Senha: vasco123
+- Criamos no banco:
+- Usuário: paulo.sn
+- Senha: vasco123
 
