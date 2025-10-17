@@ -1,0 +1,32 @@
+{% extends 'gestao_app/base.html' %}
+
+{% block title %}Eventos Disponíveis - SGEA{% endblock %}
+
+{% block content %}
+<h2 class="text-3xl font-bold mb-6">Eventos Disponíveis</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for evento in eventos %}
+    <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col justify-between">
+        <div>
+            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ evento.get_tipo_evento_display }}</span>
+            <h3 class="text-xl font-bold mt-4 mb-2">{{ evento.nome }}</h3>
+            <p class="text-gray-600 mb-1"><span class="font-semibold">Data:</span> {{ evento.data_inicio|date:"d/m/Y" }}</p>
+            <p class="text-gray-600 mb-4"><span class="font-semibold">Local:</span> {{ evento.local }}</p>
+        </div>
+        <div>
+            {% if user.is_authenticated %}
+                {% if evento.id in eventos_inscritos_ids %}
+                     <button class="w-full bg-green-500 text-white py-2 rounded-md cursor-default">Inscrito</button>
+                {% else %}
+                    <a href="{% url 'inscrever_evento' evento.id %}" class="block text-center w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">Inscrever-se</a>
+                {% endif %}
+            {% else %}
+                 <a href="{% url 'login' %}" class="block text-center w-full bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500">Faça login para se inscrever</a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-600 col-span-full">Nenhum evento disponível no momento.</p>
+    {% endfor %}
+</div>
+{% endblock %}

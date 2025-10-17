@@ -1,0 +1,28 @@
+{% extends 'gestao_app/base.html' %}
+
+{% block title %}Minhas Inscrições - SGEA{% endblock %}
+
+{% block content %}
+<h2 class="text-3xl font-bold mb-6">Minhas Inscrições</h2>
+<div class="bg-white p-6 rounded-lg shadow-lg">
+    <ul class="space-y-4">
+        {% for inscricao in inscricoes %}
+        <li class="flex flex-wrap justify-between items-center border-b pb-4">
+            <div class="mb-2 md:mb-0">
+                <h3 class="text-xl font-bold">{{ inscricao.evento.nome }}</h3>
+                <p class="text-gray-600">Inscrito em: {{ inscricao.data_inscricao|date:"d/m/Y" }}</p>
+            </div>
+            <div>
+                {% if inscricao.id in certificados %}
+                    <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Ver Certificado</a>
+                {% else %}
+                    <span class="text-gray-500 italic">Certificado pendente</span>
+                {% endif %}
+            </div>
+        </li>
+        {% empty %}
+        <li class="text-center text-gray-500 pt-4">Você não possui inscrições.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

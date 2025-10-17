@@ -1,92 +1,90 @@
-# gestao_app/models.py
-
 from django.db import models
-from django.contrib.auth.models import User
-from django.utils import timezone
+from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+import uuid
 
-
-class PerfilUsuario(models.Model):
-    """Estende o usuário padrão do Django para adicionar campos específicos."""
-    
-    # Mantenha o PERFIL_CHOICES DENTRO da classe
-    PERFIL_CHOICES = [
+class Usuario(AbstractUser):
+    """
+    Modelo de usuário customizado que herda de AbstractUser.
+    Adiciona campos como telefone, instituição e perfil.
+    """
+    PERFIL_CHOICES = (
         ('ALUNO', 'Aluno'),
         ('PROFESSOR', 'Professor'),
         ('ORGANIZADOR', 'Organizador'),
-    ]
-    
-    # Vincula ao usuário de login e senha do Django
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    
-    # Requisitos do PDF
-    telefone = models.CharField(max_length=15, blank=True, null=True)
-    instituicao_ensino = models.CharField(
-        max_length=100, 
-        help_text="Obrigatório para alunos e professores", 
-        blank=True, 
-        null=True
     )
-    # Referência correta: PerfilUsuario.PERFIL_CHOICES
+    telefone = models.CharField(max_length=15, blank=True, null=True, help_text="Telefone para contato")
+    instituicao_ensino = models.CharField(max_length=100, help_text="Instituição de ensino do usuário")
     perfil = models.CharField(max_length=20, choices=PERFIL_CHOICES, default='ALUNO')
 
+    # FIX: Adicionando related_name para resolver o conflito com o auth.User padrão do Django.
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        related_name="usuario_set",  # Nome único para o acessor reverso
+        related_query_name="user",
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="usuario_set_permissions",  # Nome único para o acessor reverso
+        related_query_name="user",
+    )
+
     def __str__(self):
-        return self.user.username
-
-
+        return self.get_full_name() or self.username
 
 class Evento(models.Model):
-    """Modelo para gerenciamento de eventos."""
-    
-    
-    TIPO_EVENTO_CHOICES = [
+    """
+    Modelo para armazenar informações sobre os eventos acadêmicos.
+    """
+    TIPO_CHOICES = (
         ('SEMINARIO', 'Seminário'),
         ('PALESTRA', 'Palestra'),
         ('MINICURSO', 'Minicurso'),
         ('SEMANA_ACADEMICA', 'Semana Acadêmica'),
-        ('OUTRO', 'Outro'),
-    ]
-    
-    # Requisitos do PDF
-    titulo = models.CharField(max_length=200)
-    
-    tipo = models.CharField(max_length=20, choices=TIPO_EVENTO_CHOICES) 
-    data_inicio = models.DateTimeField(help_text="Data e horário inicial")
-    data_fim = models.DateTimeField(help_text="Data e horário final")
-    local = models.CharField(max_length=200)
-    quantidade_participantes = models.IntegerField(default=0, help_text="Limite de vagas")
-    
-    # Organizador Responsável
-    organizador = models.ForeignKey(
-        'PerfilUsuario', 
-        on_delete=models.SET_NULL, 
-        null=True, 
+    )
+    nome = models.CharField(max_length=200)
+    tipo_evento = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    data_inicio = models.DateField()
+    data_fim = models.DateField()
+    horario = models.TimeField()
+    local = models.CharField(max_length=150)
+    quantidade_participantes = models.PositiveIntegerField()
+    organizador_responsavel = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
         limit_choices_to={'perfil': 'ORGANIZADOR'}
     )
 
-    # Requisito: Inscrição em eventos
-    participantes = models.ManyToManyField(User, related_name='eventos_inscritos', blank=True)
+    def __str__(self):
+        return self.nome
 
-    def vagas_restantes(self):
-        return self.quantidade_participantes - self.participantes.count()
+class Inscricao(models.Model):
+    """
+    Modelo para vincular um usuário a um evento (inscrição).
+    """
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
+    data_inscricao = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'evento')
 
     def __str__(self):
-        return self.titulo
-    
-    class Meta:
-        ordering = ['data_inicio']
-
+        return f'{self.usuario} inscrito em {self.evento}'
 
 class Certificado(models.Model):
-    """Modelo para a emissão de certificados (Requisito 4 do PDF)."""
-    
-    evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
-    participante = models.ForeignKey(User, on_delete=models.CASCADE)
-    codigo_verificacao = models.CharField(max_length=50, unique=True)
-    data_emissao = models.DateTimeField(default=timezone.now)
+    """
+    Modelo para gerar e armazenar os certificados dos participantes.
+    """
+    inscricao = models.OneToOneField(Inscricao, on_delete=models.CASCADE)
+    codigo_validacao = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    data_emissao = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Certificado para {self.participante.username} - {self.evento.titulo}"
-    
-    class Meta:
-        # Garante que um usuário só tenha um certificado por evento
-        unique_together = ('evento', 'participante')
+        return f'Certificado para {self.inscricao.usuario} no evento {self.inscricao.evento}'
